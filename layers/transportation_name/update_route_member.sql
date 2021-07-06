@@ -29,22 +29,7 @@ SELECT CASE
            WHEN network = 'US:US' THEN 'us-highway'::route_network_type
            WHEN network LIKE 'US:__' THEN 'us-state'::route_network_type
            -- https://en.wikipedia.org/wiki/Trans-Canada_Highway
-           -- TODO: improve hierarchical queries using
-           --    http://www.openstreetmap.org/relation/1307243
-           --    however the relation does not cover the whole Trans-Canada_Highway
-           WHEN
-                   (network = 'CA:transcanada') OR
-                   (network = 'CA:BC:primary' AND ref IN ('16')) OR
-                   (name = 'Yellowhead Highway (AB)' AND ref IN ('16')) OR
-                   (network = 'CA:SK:primary' AND ref IN ('16')) OR
-                   (network = 'CA:ON:primary' AND ref IN ('17', '417')) OR
-                   (name = 'Route Transcanadienne') OR
-                   (network = 'CA:NB:primary' AND ref IN ('2', '16')) OR
-                   (network = 'CA:PE' AND ref IN ('1')) OR
-                   (network = 'CA:NS' AND ref IN ('104', '105')) OR
-                   (network = 'CA:NL:R' AND ref IN ('1')) OR
-                   (name = 'Trans-Canada Highway')
-               THEN 'ca-transcanada'::route_network_type
+           WHEN network LIKE 'CA:transcanada%' THEN 'ca-transcanada'::route_network_type
            WHEN network = 'omt-gb-motorway' THEN 'gb-motorway'::route_network_type
            WHEN network = 'omt-gb-trunk' THEN 'gb-trunk'::route_network_type
            END;
@@ -91,3 +76,12 @@ CREATE INDEX IF NOT EXISTS osm_route_member_name_idx ON osm_route_member ("name"
 CREATE INDEX IF NOT EXISTS osm_route_member_ref_idx ON osm_route_member ("ref");
 
 CREATE INDEX IF NOT EXISTS osm_route_member_network_type_idx ON osm_route_member ("network_type");
+
+ALTER TABLE osm_route_member ADD COLUMN IF NOT EXISTS concurrency_index int;
+
+INSERT INTO osm_route_member (id, concurrency_index)
+  SELECT
+    id,
+    ROW_NUMBER() over (PARTITION BY member ORDER BY network_type, network, LENGTH(ref), ref) AS concurrency_index
+  FROM osm_route_member
+  ON CONFLICT (id) DO UPDATE SET concurrency_index = EXCLUDED.concurrency_index;
