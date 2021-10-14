@@ -254,12 +254,14 @@ init-dirs:
 
 build/openmaptiles.tm2source/data.yml: init-dirs
 ifeq (,$(wildcard build/openmaptiles.tm2source/data.yml))
-	$(DOCKER_COMPOSE) run $(DC_OPTS) openmaptiles-tools generate-tm2source $(TILESET_FILE) --host="$(PGHOST)" --port=$(PGPORT) --database="$(PGDATABASE)" --user="$(PGUSER)" --password="$(PGPASSWORD)" > $@
+	$(DOCKER_COMPOSE) run $(DC_OPTS) openmaptiles-tools bash -c \
+		'generate-tm2source $(TILESET_FILE) --host="$(PGHOST)" --port=$(PGPORT) --database="$(PGDATABASE)" --user="$(PGUSER)" --password="$(PGPASSWORD)" > $@'
 endif
 
 build/mapping.yaml: init-dirs
 ifeq (,$(wildcard build/mapping.yaml))
-	$(DOCKER_COMPOSE) run $(DC_OPTS) openmaptiles-tools generate-imposm3 $(TILESET_FILE) > $@
+	$(DOCKER_COMPOSE) run $(DC_OPTS) openmaptiles-tools bash -c \
+		'generate-imposm3 $(TILESET_FILE) > $@'
 endif
 
 .PHONY: build-sql
@@ -285,6 +287,7 @@ destroy-db:
 	$(DOCKER_COMPOSE) rm -fv
 	docker volume ls -q -f "name=^$(DC_PROJECT)_" | $(XARGS) docker volume rm
 	rm -rf cache
+	mkdir cache
 
 .PHONY: start-db-nowait
 start-db-nowait: init-dirs
