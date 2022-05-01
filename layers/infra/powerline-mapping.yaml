@@ -1,0 +1,21 @@
+tables:
+  # etldoc: imposm3 -> osm_power_linestring
+  power_linestring:
+    type: linestring
+    fields:
+    - name: osm_id
+      type: id
+    - name: geometry
+      type: geometry
+    - key: power
+      name: class
+      type: string
+    - key: name
+      name: name
+      type: string
+    mapping:
+      power:
+      - cable
+      - line
+      - busbar
+      - minor_line
