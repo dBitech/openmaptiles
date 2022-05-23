@@ -1,0 +1,43 @@
+tables:
+  power_line:
+    type: linestring
+    columns:
+    - *ref
+    - name: osm_id
+      type: id
+    - name: geometry
+      type: geometry
+    - name: location
+      key: location
+      type: string
+    - name: line
+      key: line
+      type: string
+    - name: voltage
+      key: voltage
+      type: string
+    - name: frequency
+      key: frequency
+      type: string
+    - name: circuits
+      key: circuits
+      type: integer
+    - name: tunnel
+      key: tunnel
+      type: bool
+  mapping:
+    power:
+      line
+      minor_line
+      cable
+      minor_cable
+
+generalized_tables:
+  power_line_gen_100:
+    source: power_line
+    tolerance: 100
+    sql_filter: coalesce(convert_voltage(voltage), 0) > 100000 AND ST_length(geometry) > 200 AND line NOT IN ('bay', 'busbar')
+  power_line_gen_500:
+    source: power_line
+    tolerance: 500
+    sql_filter: coalesce(convert_voltage(voltage), 0) > 100000 AND ST_length(geometry) > 600 AND line NOT IN ('bay', 'busbar')
